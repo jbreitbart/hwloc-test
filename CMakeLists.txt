@@ -37,6 +37,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   ADD_DEFINITIONS(-Wno-old-style-cast -Wno-undef -Wno-documentation-unknown-command)
   ADD_DEFINITIONS(-Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors)
 
+  # Reduce the noise coming from hwloc
+  ADD_DEFINITIONS(-Wno-reserved-id-macro -Wno-documentation)
+
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   # Using GCC
   if ("${CMAKE_BUILD_TYPE}" STREQUAL "release")
@@ -69,7 +72,7 @@ endif()
 # hwloc
 ExternalProject_Add(hwloc
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/hwloc-1.11.0
-    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/hwloc-1.11.0/configure --enable-static --prefix=<INSTALL_DIR> CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
+    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/vendor/hwloc-1.11.0/configure --disable-pci --disable-opencl --disable-cuda --disable-nvml --disable-gl --disable-libudev --enable-static --prefix=<INSTALL_DIR> CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
     BUILD_IN_SOURCE 0
     BUILD_COMMAND ${MAKE})
 
@@ -88,9 +91,9 @@ include_directories(${hwloc_path}/include)
 
 ########
 # Compiling and linking
-add_executable(hwloc-test work_tree.cpp)
+add_executable(test work_tree.cpp)
+target_link_libraries(test -lnuma)
 
-# Make sure auotpin+ depends on libyaml and link with it
-add_dependencies (hwloc-test libyaml)
-target_link_libraries(hwloc-test ${hwloc_path}/lib/libhwloc.a)
+add_dependencies (test hwloc)
+target_link_libraries(test ${hwloc_path}/lib/libhwloc.a)
 ########

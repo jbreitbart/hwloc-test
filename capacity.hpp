@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 struct capacity {
 	bool enough(int v) { return _value >= v; }
 

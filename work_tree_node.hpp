@@ -1,10 +1,19 @@
 #pragma once
 
+#include <initializer_list>
+#include <memory>
+#include <iostream>
+#include <cassert>
+#include <map>
+#include <iterator>
+#include <algorithm>
+#include <limits>
+
 #include "capacity.hpp"
 
 struct work_tree_node {
 	// Increased for every root node
-	static int id_counter;
+	static size_t id_counter;
 
 	// Array of children
 	std::unique_ptr<work_tree_node[]> _children;
@@ -17,9 +26,9 @@ struct work_tree_node {
 
 	// Pointer to the parent
 	work_tree_node *const _parent = nullptr;
-	int _number_of_children = 0;
-	int _id = 0;
-	int _level = 0;
+	size_t _number_of_children = 0;
+	size_t _id = 0;
+	size_t _level = 0;
 
 	work_tree_node() : _parent(nullptr) {}
 
@@ -28,14 +37,14 @@ struct work_tree_node {
 	template <typename T> work_tree_node(const std::initializer_list<T> &list) : work_tree_node(list, nullptr, 1) {}
 	~work_tree_node() {}
 
-	int scatter(int key, int hyperthreads) {
+	size_t scatter(int key, int hyperthreads) {
 		if (!_cap.enough(hyperthreads)) throw "kein platz mehr :)";
 
 		// find child with minimum number of processes with our key
-		int min_v = std::numeric_limits<int>::max();
-		int min_id = -1;
-		for (int i = 0; i < _number_of_children; ++i) {
-			int count = _children[i]._processes.count(key);
+		size_t min_v = std::numeric_limits<size_t>::max();
+		size_t min_id = id_counter+1;
+		for (size_t i = 0; i < _number_of_children; ++i) {
+			auto count = _children[i]._processes.count(key);
 			if (_children[i]._cap.enough(hyperthreads)) {
 				if (count < min_v) {
 					min_v = count;
@@ -45,7 +54,7 @@ struct work_tree_node {
 		}
 
 		// true if there are no children of if the capacity of the children is not big enough
-		if (min_id == -1) {
+		if (min_id == id_counter+1) {
 			std::cout << "allocating key " << key << " on " << _id << "@" << _level << std::endl;
 			reserve(key, hyperthreads);
 			return _id;
@@ -54,18 +63,18 @@ struct work_tree_node {
 		return _children[min_id].scatter(key, hyperthreads);
 	}
 
-	int compact(int key, int hyperthreads) {
+	size_t compact(int key, int hyperthreads) {
 		if (!_cap.enough(hyperthreads)) throw "kein platz mehr :)";
 
 		// find child with maximum number of processes with our key
-		int min_v = -1;
-		int min_id = -1;
-		for (int i = 0; i < _number_of_children; ++i) {
-			int count = _children[i]._processes.count(key);
+		size_t min_v = 0;
+		size_t min_id = id_counter+1;
+		for (size_t i = 0; i < _number_of_children; ++i) {
+			auto count = _children[i]._processes.count(key);
 			// std::cout << "checking " << _children[i]._id << "@" << _children[i]._level << ": "
 			//		  << count << " - " << _children[i]._cap  << " - " << hyperthreads << std::endl;
 			if (_children[i]._cap.enough(hyperthreads)) {
-				if (count > min_v) {
+				if (count >= min_v) {
 					min_v = count;
 					min_id = i;
 				}
@@ -73,7 +82,7 @@ struct work_tree_node {
 		}
 
 		// true if there are no children of if the capacity of the children is not big enough
-		if (min_id == -1) {
+		if (min_id == id_counter+1) {
 			std::cout << "allocating key " << key << " on " << _id << "@" << _level << std::endl;
 			reserve(key, hyperthreads);
 			return _id;
@@ -102,7 +111,7 @@ struct work_tree_node {
 			return;
 		}
 
-		for (int i = 0; i < _number_of_children; ++i) _children[i].remove_all(key);
+		for (size_t i = 0; i < _number_of_children; ++i) _children[i].remove_all(key);
 
 		auto it = _processes.find(key);
 		_cap += it->second;
@@ -113,11 +122,11 @@ struct work_tree_node {
 
   private:
 	template <typename T>
-	work_tree_node(const std::initializer_list<T> &list, work_tree_node *const parent, const int level)
+	work_tree_node(const std::initializer_list<T> &list, work_tree_node *const parent, const size_t level)
 		: _parent(parent), _level(level) {
 		// compute capacity
 		_cap = 1;
-		int temp = list.size() - 1;
+		size_t temp = list.size() - 1;
 		for (auto it = std::crbegin(list) + 1; it != std::crend(list); ++it) {
 			if (level > temp) {
 				break;
@@ -134,7 +143,7 @@ struct work_tree_node {
 			return;
 		}
 
-		int count = 0;
+		size_t count = 0;
 		// get the number of elements required in this level
 		for (auto i = list.begin(); i != list.end(); ++i) {
 			if (count == level) {
@@ -148,7 +157,7 @@ struct work_tree_node {
 
 		_children = std::unique_ptr<work_tree_node[]>(new work_tree_node[count]);
 		// create the work_tree_node in place
-		for (int i = 0; i < count; ++i) {
+		for (size_t i = 0; i < count; ++i) {
 			new (&_children[i]) work_tree_node(list, this, level + 1);
 		}
 	}

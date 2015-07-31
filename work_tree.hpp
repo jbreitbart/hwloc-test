@@ -1,7 +1,6 @@
 #pragma once
 
-#include <initializer_list>
-
+#include <vector>
 
 #include "capacity.hpp"
 #include "work_tree_node.hpp"
@@ -14,7 +13,7 @@ class work_tree {
 
   public:
 	work_tree() = delete;
-	template <typename T> work_tree(std::initializer_list<T> list) : root(list) {}
+	work_tree(std::vector<size_t> vector) : root(vector) {}
 
 	size_t scatter(int key, int hyperthreads) { return translate(root.scatter(key, hyperthreads)); }
 

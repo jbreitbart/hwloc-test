@@ -1,6 +1,6 @@
 #pragma once
 
-#include <initializer_list>
+#include <vector>
 #include <memory>
 #include <iostream>
 #include <cassert>
@@ -34,7 +34,7 @@ struct work_tree_node {
 
 	work_tree_node(work_tree_node &) = delete;
 
-	template <typename T> work_tree_node(const std::initializer_list<T> &list) : work_tree_node(list, nullptr, 1) {}
+	template <typename T> work_tree_node(const std::vector<T> &list) : work_tree_node(list, nullptr, 1) {}
 	~work_tree_node() {}
 
 	size_t scatter(int key, int hyperthreads) {
@@ -42,7 +42,7 @@ struct work_tree_node {
 
 		// find child with minimum number of processes with our key
 		size_t min_v = std::numeric_limits<size_t>::max();
-		size_t min_id = id_counter+1;
+		size_t min_id = id_counter + 1;
 		for (size_t i = 0; i < _number_of_children; ++i) {
 			auto count = _children[i]._processes.count(key);
 			if (_children[i]._cap.enough(hyperthreads)) {
@@ -54,7 +54,7 @@ struct work_tree_node {
 		}
 
 		// true if there are no children of if the capacity of the children is not big enough
-		if (min_id == id_counter+1) {
+		if (min_id == id_counter + 1) {
 			std::cout << "allocating key " << key << " on " << _id << "@" << _level << std::endl;
 			reserve(key, hyperthreads);
 			return _id;
@@ -68,7 +68,7 @@ struct work_tree_node {
 
 		// find child with maximum number of processes with our key
 		size_t min_v = 0;
-		size_t min_id = id_counter+1;
+		size_t min_id = id_counter + 1;
 		for (size_t i = 0; i < _number_of_children; ++i) {
 			auto count = _children[i]._processes.count(key);
 			// std::cout << "checking " << _children[i]._id << "@" << _children[i]._level << ": "
@@ -82,7 +82,7 @@ struct work_tree_node {
 		}
 
 		// true if there are no children of if the capacity of the children is not big enough
-		if (min_id == id_counter+1) {
+		if (min_id == id_counter + 1) {
 			std::cout << "allocating key " << key << " on " << _id << "@" << _level << std::endl;
 			reserve(key, hyperthreads);
 			return _id;
@@ -122,7 +122,7 @@ struct work_tree_node {
 
   private:
 	template <typename T>
-	work_tree_node(const std::initializer_list<T> &list, work_tree_node *const parent, const size_t level)
+	work_tree_node(const std::vector<T> &list, work_tree_node *const parent, const size_t level)
 		: _parent(parent), _level(level) {
 		// compute capacity
 		_cap = 1;

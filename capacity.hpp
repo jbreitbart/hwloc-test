@@ -3,7 +3,7 @@
 #include <iostream>
 
 struct capacity {
-	bool enough(size_t v) { return _value >= v; }
+	bool enough(size_t v) const { return _value >= v; }
 
 	capacity &operator=(const size_t c) {
 		_value = c;
@@ -24,6 +24,8 @@ struct capacity {
 		_value *= c;
 		return *this;
 	}
+
+	template <typename T> T operator/(const T c) const { return static_cast<T>(_value / c); }
 
   private:
 	size_t _value;

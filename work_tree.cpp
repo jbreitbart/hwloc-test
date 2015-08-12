@@ -4,8 +4,6 @@
 #include <cassert>
 #include <hwloc.h>
 
-size_t work_tree_node::id_counter = 0;
-
 int main(int argc, char const *argv[]) {
 	hwloc_topology_t top;
 	assert(0 == hwloc_topology_init(&top));
